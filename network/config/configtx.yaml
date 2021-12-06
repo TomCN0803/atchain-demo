@@ -1,0 +1,151 @@
+Organizations:
+  - &DemoOrdererOrg
+    Name: DemoOrdererOrg
+    ID: DemoOrdererMSP
+    MSPDir: ../../organization/ordererOrganizations/demo.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DemoOrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DemoOrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DemoOrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.demo.com:18860
+
+  - &DemoOrg
+    Name: DemoOrg
+    ID: DemoMSP
+    MSPDir: ../../organization/peerOrganizations/demo.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DemoMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DemoMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DemoMSP.admin')"
+    AnchorPeers:
+      - Host: peer0.demo.com
+        Port: 18850
+
+  - &DemoOrgIdemix
+    name: DemoOrgIdemix
+    id: DemoIdemixMSP
+    msptype: idemix
+    mspdir: ../../organization/peerOrganizations/demo.com/idemix
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('DemoIdemixMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('DemoIdemixMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('DemoIdemixMSP.admin')"
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+
+  Orderer: &OrdererCapabilities
+    V2_0: true
+
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.demo.com
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.demo.com
+        Port: 18860
+        ClientTLSCert: ../../organization/ordererOrganizations/demo.com/orderers/orderer.demo.com/tls/server.crt
+        ServerTLSCert: ../../organization/ordererOrganizations/demo.com/orderers/orderer.demo.com/tls/server.crt
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  ATChainGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *DemoOrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Consortiums:
+      ATChainConsortium:
+        Organizations:
+          - *DemoOrg
+          - *DemoOrgIdemix
+  ATChainChannel:
+    Consortium: ATChainConsortium
+    <<: *ChannelDefaults
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *DemoOrg
+        - *DemoOrgIdemix
+      Capabilities:
+        <<: *ApplicationCapabilities

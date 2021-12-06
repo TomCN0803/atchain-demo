@@ -1,0 +1,53 @@
+---
+name: atchain-demo-network-DemoOrg
+version: 1.0.0
+client:
+  organization: DemoOrg
+  connection:
+    timeout:
+      peer:
+        endorser: '300'
+organizations:
+  DemoOrg:
+    mspid: DemoOrgMSP
+    peers:
+      - peer0.demo.com
+      - peer1.demo.com
+      - peer2.demo.com
+    certificateAuthorities:
+      - ca.demo.com
+peers:
+  peer0.demo.com:
+    url: grpcs://localhost:18850
+    tlsCACerts:
+      pem: |
+        ${PEERPEM}
+    grpcOptions:
+      ssl-target-name-override: peer0.demo.com
+      hostnameOverride: peer0.demo.com
+  peer1.demo.com:
+    url: grpcs://localhost:18851
+    tlsCACerts:
+      pem: |
+        ${PEERPEM}
+    grpcOptions:
+      ssl-target-name-override: peer1.demo.com
+      hostnameOverride: peer1.demo.com
+  peer2.demo.com:
+    url: grpcs://localhost:18852
+    tlsCACerts:
+      pem: |
+        ${PEERPEM}
+    grpcOptions:
+      ssl-target-name-override: peer2.demo.com
+      hostnameOverride: peer2.demo.com
+certificateAuthorities:
+  ca.demo.com:
+    url: https://localhost:17777
+    caName: ca-DemoOrg
+    tlsCACerts:
+      pem:
+        - |
+          ${CAPEM}
+    httpOptions:
+      verify: false
