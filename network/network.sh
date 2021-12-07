@@ -13,8 +13,9 @@ export CORE_PEER_TLS_ENABLED=true
 
 function networkDown() {
   docker-compose -f "${DOCKER_COMPOSE_DB}" -f "${DOCKER_COMPOSE_NODE}" down --volumes --remove-orphans
-  docker run --rm -v "$(pwd)":/data busybox sh -c 'cd /data && rm -rf system-genesis-block log.txt *.tar.gz channel-artifacts store/*.enc'
-  docker run --rm -v "$(pwd)/../app":/data busybox sh -c 'cd /data && rm -rf ./wallets/* ./tmp'
+  docker run --rm -v "$(pwd)":/data busybox sh \
+    -c 'cd /data && rm -rf system-genesis-block log.txt *.tar.gz channel-artifacts store/*.enc'
+  docker run --rm -v "$(pwd)/../app":/data busybox sh -c 'cd /data && rm -rf ./user/wallets/*'
 
   # Remove useless containers
   CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*/) {print $1}')
@@ -80,7 +81,6 @@ function createConsortium() {
     nodes="${nodes} peer${i}.demo.com db-peer${i}"
   done
   docker-compose -f "${DOCKER_COMPOSE_DB}" -f "${DOCKER_COMPOSE_NODE}" up -d $nodes
-  docker ps
 }
 
 function createChannel() {
@@ -164,6 +164,7 @@ function up() {
     createChannel
   fi
   joinChannel
+  docker ps
 }
 
 function networkUp() {

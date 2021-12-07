@@ -68,6 +68,7 @@ export -f errorln
 export -f successln
 export -f infoln
 export -f warnln
+export -f fatalln
 export -f die
 export -f oneLinePem
 export -f jsonCCP

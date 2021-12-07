@@ -3,3 +3,5 @@
 bin
 organization/*
 network/system-genesis-block
+app/user/wallets/*
+network/log.txt
