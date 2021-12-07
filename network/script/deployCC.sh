@@ -85,10 +85,10 @@ function installCC() {
   { set +x; } 2>/dev/null
   cat log.txt
   if [ $res -ne 0 ]; then
-    fatalln "Chaincode installation on ${PEER}.demo.com has failed!"
+    fatalln "Chaincode installation on peer${PEER}.demo.com has failed!"
     exit 1
   fi
-  successln "Chaincode is successfully installed on ${PEER}.demo.com"
+  successln "Chaincode is successfully installed on peer${PEER}.demo.com"
 }
 
 function queryInstalled() {
@@ -101,10 +101,10 @@ function queryInstalled() {
   cat log.txt
   CC_PACKAGE_ID=$(sed -n "/${CC_NAME}_${CC_VERSION}/{s/^Package ID: //; s/, Label:.*$//; p;}" log.txt)
   if [ $res -ne 0 ]; then
-    fatalln "Query installed on ${PEER}.demo.com has failed!"
+    fatalln "Query installed on peer${PEER}.demo.com has failed!"
     exit 1
   fi
-  successln "Query installed successful on ${PEER}.demo.com on channel"
+  successln "Query installed successful on peer${PEER}.demo.com on channel"
 }
 
 function approveForMyOrg() {
@@ -114,16 +114,16 @@ function approveForMyOrg() {
   # shellcheck disable=2086
   peer lifecycle chaincode approveformyorg -o localhost:18860 --ordererTLSHostnameOverride orderer.demo.com \
     --tls --cafile $ORDERER_TLSCA --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${CC_VERSION} \
-    --package-id ${PACKAGE_ID} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} \
+    --package-id ${CC_PACKAGE_ID} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} \
     >&log.txt
   res=$?
   { set +x; } 2>/dev/null
   cat log.txt
   if [ $res -ne 0 ]; then
-    fatalln "Chaincode definition approved on ${PEER}.demo.com on channel '$CHANNEL_NAME' failed"
+    fatalln "Chaincode definition approved on peer${PEER}.demo.com on channel '$CHANNEL_NAME' failed"
     exit 1
   fi
-  successln "Chaincode definition approved on ${PEER}.demo.com on channel '$CHANNEL_NAME'"
+  successln "Chaincode definition approved on peer${PEER}.demo.com on channel '$CHANNEL_NAME'"
 }
 
 function commitCCDef() {
@@ -167,8 +167,8 @@ function queryCommitted() {
   done
   cat log.txt
   if [ "$rc" -eq 0 ]; then
-    successln "Query chaincode definition successful on ${PEER}.demo.comon channel '$CHANNEL_NAME'"
+    successln "Query chaincode definition successful on peer${PEER}.demo.comon channel '$CHANNEL_NAME'"
   else
-    fatalln "After $MAX_RETRY attempts, Query chaincode definition result on ${PEER}.demo.com is INVALID!"
+    fatalln "After $MAX_RETRY attempts, Query chaincode definition result on peer${PEER}.demo.com is INVALID!"
   fi
 }

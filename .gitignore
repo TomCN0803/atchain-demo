@@ -5,3 +5,6 @@ organization/*
 network/system-genesis-block
 app/user/wallets/*
 network/log.txt
+chaincode/vendor
+network/*.tar.gz
+network/channel-artifacts/*

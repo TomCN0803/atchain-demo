@@ -13,6 +13,9 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('DemoOrdererMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DemoOrdererMSP.peer')"
     OrdererEndpoints:
       - orderer.demo.com:18860
 
@@ -30,6 +33,9 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('DemoMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DemoMSP.peer')"
     AnchorPeers:
       - Host: peer0.demo.com
         Port: 18850
@@ -49,6 +55,9 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('DemoIdemixMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('DemoIdemixMSP.peer')"
 
 Capabilities:
   Channel: &ChannelCapabilities
@@ -74,10 +83,10 @@ Application: &ApplicationDefaults
       Rule: "MAJORITY Admins"
     LifecycleEndorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Rule: "ANY Endorsement"
     Endorsement:
       Type: ImplicitMeta
-      Rule: "MAJORITY Endorsement"
+      Rule: "ANY Endorsement"
   Capabilities:
     <<: *ApplicationCapabilities
 

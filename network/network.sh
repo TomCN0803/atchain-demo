@@ -10,6 +10,7 @@ export PATH="${PATH}:${PWD}/../bin/"
 export FABRIC_CFG_PATH=${PWD}/config
 export CHANNEL_NAME="atchain-channel"
 export CORE_PEER_TLS_ENABLED=true
+export ORDERER_TLSCA=${PWD}/../organization/ordererOrganizations/demo.com/tlsca/tlsca.demo.com-cert.pem
 
 function networkDown() {
   docker-compose -f "${DOCKER_COMPOSE_DB}" -f "${DOCKER_COMPOSE_NODE}" down --volumes --remove-orphans
@@ -106,7 +107,6 @@ function createChannel() {
   setPeerEnv "0"
   rc=1
   COUNTER=1
-  ORDERER_TLSCA=${PWD}/../organization/ordererOrganizations/demo.com/tlsca/tlsca.demo.com-cert.pem
   while [ $rc -ne 0 ] && [ $COUNTER -lt 5 ]; do
     sleep 1
     set -x
@@ -129,7 +129,6 @@ function createChannel() {
 function joinChannel() {
   for ((i = 0; i < 3; i++)); do
     setPeerEnv ${i}
-    env
     infoln "peer${i}.demo.com joining channel ${CHANNEL_NAME}"
     rc=1
     COUNTER=1
@@ -164,7 +163,7 @@ function up() {
 function deployCC() {
   CC_NAME="atchain-demo-cc"
   CC_SRC_LANGUAGE="go"
-  CC_SRC_PATH="../chaincode-go"
+  CC_SRC_PATH="../chaincode"
   CC_VERSION="1.0"
   CC_SEQUENCE=""
   CC_INIT_FCN=""
