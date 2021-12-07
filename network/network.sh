@@ -103,10 +103,7 @@ function createChannel() {
   fi
 
   infoln "Creating channel ${CHANNEL_NAME}"
-  export CORE_PEER_LOCALMSPID=DemoMSP
-  export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organization/peerOrganizations/demo.com/peers/peer0.demo.com/tls/ca.crt
-  export CORE_PEER_MSPCONFIGPATH=${PWD}/../organization/peerOrganizations/demo.com/users/Admin@demo.com/msp
-  export CORE_PEER_ADDRESS=localhost:18850
+  setPeerEnv "0"
   rc=1
   COUNTER=1
   ORDERER_TLSCA=${PWD}/../organization/ordererOrganizations/demo.com/tlsca/tlsca.demo.com-cert.pem
@@ -131,11 +128,8 @@ function createChannel() {
 
 function joinChannel() {
   for ((i = 0; i < 3; i++)); do
-    export CORE_PEER_LOCALMSPID=DemoMSP
-    export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organization/peerOrganizations/demo.com/peers/peer${i}.demo.com/tls/ca.crt
-    export CORE_PEER_MSPCONFIGPATH=${PWD}/../organization/peerOrganizations/demo.com/users/Admin@demo.com/msp
-    export CORE_PEER_ADDRESS=localhost:1885${i}
-
+    setPeerEnv ${i}
+    env
     infoln "peer${i}.demo.com joining channel ${CHANNEL_NAME}"
     rc=1
     COUNTER=1
@@ -165,6 +159,68 @@ function up() {
   fi
   joinChannel
   docker ps
+}
+
+function deployCC() {
+  CC_NAME="atchain-demo-cc"
+  CC_SRC_LANGUAGE="go"
+  CC_SRC_PATH="../chaincode-go"
+  CC_VERSION="1.0"
+  CC_SEQUENCE=""
+  CC_INIT_FCN=""
+  CC_COLL_CONFIG=""
+  CC_END_POLICY=""
+
+  while [[ $# -gt 1 ]]; do
+    case $1 in
+    -ccn)
+      CC_NAME="$2"
+      ;;
+    -ccp)
+      CC_SRC_PATH="$2"
+      ;;
+    -ccl)
+      CC_SRC_LANGUAGE="$2"
+      ;;
+    -ccv)
+      CC_VERSION="$2"
+      ;;
+    -ccs)
+      CC_SEQUENCE="$2"
+      ;;
+    -cci)
+      CC_INIT_FCN="$2"
+      ;;
+    -ccep)
+      CC_END_POLICY="$2"
+      ;;
+    -cccg)
+      CC_COLL_CONFIG="$2"
+      ;;
+    *)
+      errorln "Unknown flag: $1"
+      exit 1
+      ;;
+    esac
+    shift
+    shift
+  done
+
+  . ./script/deployCC.sh "$CC_NAME" "$CC_SRC_PATH" "$CC_SRC_LANGUAGE" "$CC_VERSION" "$CC_SEQUENCE" \
+    "$CC_INIT_FCN" "$CC_END_POLICY" "$CC_COLL_CONFIG"
+
+  queryInstalled "0"
+  if [ -z "${CC_PACKAGE_ID}" ]; then
+    packageCC
+    for ((i = 0; i < 3; i++)); do
+      installCC "${i}"
+    done
+    queryInstalled "0"
+  fi
+
+  approveForMyOrg "0"
+  commitCCDef "0"
+  queryCommitted "0"
 }
 
 function networkUp() {
@@ -207,6 +263,10 @@ case $MODE in
 "up")
   shift
   networkUp "$@"
+  ;;
+"dcc")
+  shift
+  deployCC "$@"
   ;;
 "down")
   networkDown

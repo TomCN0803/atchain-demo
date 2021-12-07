@@ -63,6 +63,14 @@ function yamlCCP() {
     ./config/ccp-template.yml | sed -e $'s/\\\\n/\\\n          /g'
 }
 
+function setPeerEnv() {
+  local PEER=$1
+  export CORE_PEER_LOCALMSPID=DemoMSP
+  export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/../organization/peerOrganizations/demo.com/peers/peer${PEER}.demo.com/tls/ca.crt
+  export CORE_PEER_MSPCONFIGPATH=${PWD}/../organization/peerOrganizations/demo.com/users/Admin@demo.com/msp
+  export CORE_PEER_ADDRESS=localhost:1885${PEER}
+}
+
 export -f println
 export -f errorln
 export -f successln
@@ -73,3 +81,4 @@ export -f die
 export -f oneLinePem
 export -f jsonCCP
 export -f yamlCCP
+export -f setPeerEnv
