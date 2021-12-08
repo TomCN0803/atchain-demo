@@ -15,6 +15,8 @@ RH=$3
 CAINPUT="${PWD}/../../organization/peerOrganizations/demo.com/idemix"
 OUTPUT="${PWD}/wallets/${EID}-${OU}"
 
-mkdir -p "wallets/${EID}-${OU}"
+mkdir -p "${OUTPUT}"
+mkdir -p "${OUTPUT}/conn"
+cp -r "../../organization/peerOrganizations/demo.com/users/${EID}@demo.com" "${OUTPUT}/conn"
 
 idemixgen signerconfig -u ${OU} -e ${EID} -r ${RH} --ca-input=${CAINPUT} --output=${OUTPUT}

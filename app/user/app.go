@@ -3,26 +3,22 @@ package main
 import "fmt"
 
 const (
-	CryptoPath     = "../organization/peerOrganizations/demo.com/"
 	MSPID          = "DemoIdemixMSP"
-	WalletPath     = "user/wallets/john-client"
+	UserName       = "User1"
+	WalletPath     = "user/wallets/User1-client"
 	ServerName     = "peer0.demo.com"
 	ServerEndpoint = "localhost:18850"
 	NetWork        = "atchain-channel"
 	Contract       = "atchain-demo-cc"
 )
 
-var (
-	TLSCertPAth = CryptoPath + "peers/peer0.demo.com/tls/ca.crt"
-)
-
 func main() {
-	user, err := NewUser(MSPID, WalletPath)
+	user, err := NewUser(MSPID, UserName, WalletPath)
 	if err != nil {
 		panic(err)
 	}
 
-	err = user.InitGateway(TLSCertPAth, ServerName, ServerEndpoint)
+	err = user.InitGateway(ServerName, ServerEndpoint)
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +27,7 @@ func main() {
 		_ = user.CloseGateway()
 	}()
 
-	network := user.Gateway.GetNetwork(NetWork)
+	network := user.GwConf.Gateway.GetNetwork(NetWork)
 	contract := network.GetContract(Contract)
 	res, err := contract.SubmitTransaction("Echo", "324242342")
 	if err != nil {

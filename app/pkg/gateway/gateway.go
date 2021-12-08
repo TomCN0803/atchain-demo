@@ -2,10 +2,11 @@ package gateway
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/hyperledger/fabric-gateway/pkg/client"
 	"github.com/hyperledger/fabric-gateway/pkg/identity"
 	"google.golang.org/grpc"
-	"time"
 )
 
 var (

@@ -2,83 +2,124 @@ package main
 
 import (
 	"fmt"
-	"github.com/hyperledger/fabric-gateway/pkg/client"
-	"google.golang.org/grpc"
 	"io/ioutil"
 	"path"
 
+	schemes "github.com/IBM/idemix/bccsp/schemes"
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
 	"github.com/golang/protobuf/proto"
+	"github.com/hyperledger/fabric-gateway/pkg/client"
 	"github.com/hyperledger/fabric-gateway/pkg/idemix"
 	"github.com/hyperledger/fabric-gateway/pkg/identity"
 	"github.com/hyperledger/fabric-protos-go/msp"
+	"google.golang.org/grpc"
 )
+
+const DomainName = "demo.com"
 
 type User struct {
 	*msp.IdemixMSPSignerConfig
 
-	Identity  *idemix.Identity
-	Signer    identity.Sign
-	NymSigner identity.Sign
-	IssuerPK  []byte
-	Gateway   *client.Gateway
-	grpcConn  *grpc.ClientConn
+	MSPID      string
+	Name       string
+	WalletPath string
+	GwConf     *UserGatewayConf
+
+	CSP      *idemix.CSPWrapper
+	IssuerPK schemes.Key
+	IdxSK    schemes.Key
+	IdxNymSK schemes.Key
 }
 
-func NewUser(mspID, walletPath string) (*User, error) {
+type UserGatewayConf struct {
+	Gateway  *client.Gateway
+	grpcConn *grpc.ClientConn
+	GwSigner identity.Sign
+	Identity identity.Identity
+}
+
+func NewUser(mspID, name, walletPath string) (*User, error) {
 	confPath := path.Join(walletPath, "user", "SignerConfig")
 	ipkPath := path.Join(walletPath, "msp", "IssuerPublicKey")
 
 	signerConf, err := getIdemixSignerConf(confPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new idemix identity: %w", err)
+		return nil, fmt.Errorf("failed to create new user: %w", err)
 	}
 
 	issuerPKBytes, err := ioutil.ReadFile(ipkPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new idemix identity: %w", err)
+		return nil, fmt.Errorf("failed to create new user: %w", err)
 	}
 
 	user := new(User)
-	user.IssuerPK = issuerPKBytes
 	user.IdemixMSPSignerConfig = signerConf
-	user.Identity = idemix.NewIdemixIdentity(mspID, signerConf.Cred)
-	user.Signer = identity.NewIdemixSign(
-		signerConf.Sk,
-		issuerPKBytes,
-		signerConf.Cred,
-		signerConf.CredentialRevocationInformation,
-	)
-	user.NymSigner = identity.NewIdemixNymKeySign(signerConf.Sk, issuerPKBytes)
+	user.MSPID = mspID
+	user.Name = name
+	user.WalletPath = walletPath
+
+	user.CSP, err = idemix.NewIdemixCSP()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new user: %w", err)
+	}
+
+	user.IssuerPK, err = user.CSP.GetIssuerPK(issuerPKBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new user: %w", err)
+	}
+
+	user.IdxSK, err = user.CSP.GetUserSK(signerConf.Sk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new user: %w", err)
+	}
 
 	return user, nil
 }
 
-func (u *User) InitGateway(tlsCertPath, serverName, serverEndpoint string) error {
+func (u *User) InitGateway(serverName, serverEndpoint string) error {
+	tlsCertPath := path.Join(u.WalletPath, "conn", "tls", "ca.crt")
+	signcertName := u.Name + "@" + DomainName + "-cert.pem"
+	signcertPath := path.Join(u.WalletPath, "conn", "msp", "signcerts", signcertName)
+	keyPath := path.Join(u.WalletPath, "conn", "msp", "keystore", "priv_sk")
+
 	connection, err := gateway.NewConnection(tlsCertPath, serverName, serverEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.grpcConn = connection
+	u.GwConf.grpcConn = connection
 
-	gw, err := gateway.NewGateway(u.Identity, u.Signer, connection)
+	id, err := gateway.NewIdentity(u.MSPID, signcertPath)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.Gateway = gw
+	u.GwConf.Identity = id
+
+	signer, err := gateway.NewSigner(keyPath)
+	if err != nil {
+		return fmt.Errorf("failed to initialize gateway: %w", err)
+	}
+
+	u.GwConf.GwSigner = signer
+
+	gw, err := gateway.NewGateway(id, signer, connection)
+	if err != nil {
+		return fmt.Errorf("failed to initialize gateway: %w", err)
+	}
+
+	u.GwConf.Gateway = gw
 
 	return nil
 }
 
 func (u *User) CloseGateway() error {
-	err := u.grpcConn.Close()
+	err := u.GwConf.grpcConn.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close gateway: %w", err)
 	}
 
-	err = u.Gateway.Close()
+	err = u.GwConf.Gateway.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close gateway: %w", err)
 	}
