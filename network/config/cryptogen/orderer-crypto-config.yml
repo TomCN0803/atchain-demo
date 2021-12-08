@@ -6,3 +6,4 @@ OrdererOrgs:
       - Hostname: orderer
         SANS:
           - localhost
+          - "127.0.0.1"

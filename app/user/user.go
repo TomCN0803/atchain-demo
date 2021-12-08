@@ -24,6 +24,7 @@ type User struct {
 	Name       string
 	WalletPath string
 	GwConf     *UserGatewayConf
+	Gateway    *client.Gateway
 
 	CSP      *idemix.CSPWrapper
 	IssuerPK schemes.Key
@@ -32,7 +33,6 @@ type User struct {
 }
 
 type UserGatewayConf struct {
-	Gateway  *client.Gateway
 	grpcConn *grpc.ClientConn
 	GwSigner identity.Sign
 	Identity identity.Identity
@@ -80,46 +80,49 @@ func (u *User) InitGateway(serverName, serverEndpoint string) error {
 	tlsCertPath := path.Join(u.WalletPath, "conn", "tls", "ca.crt")
 	signcertName := u.Name + "@" + DomainName + "-cert.pem"
 	signcertPath := path.Join(u.WalletPath, "conn", "msp", "signcerts", signcertName)
-	keyPath := path.Join(u.WalletPath, "conn", "msp", "keystore", "priv_sk")
+	keyPath := path.Join(u.WalletPath, "conn", "msp", "keystore", "key.pem")
 
 	connection, err := gateway.NewConnection(tlsCertPath, serverName, serverEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.GwConf.grpcConn = connection
+	gwConf := new(UserGatewayConf)
+
+	gwConf.grpcConn = connection
 
 	id, err := gateway.NewIdentity(u.MSPID, signcertPath)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.GwConf.Identity = id
+	gwConf.Identity = id
 
 	signer, err := gateway.NewSigner(keyPath)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.GwConf.GwSigner = signer
+	gwConf.GwSigner = signer
+	u.GwConf = gwConf
 
 	gw, err := gateway.NewGateway(id, signer, connection)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	u.GwConf.Gateway = gw
+	u.Gateway = gw
 
 	return nil
 }
 
 func (u *User) CloseGateway() error {
-	err := u.GwConf.grpcConn.Close()
+	err := u.Gateway.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close gateway: %w", err)
 	}
 
-	err = u.GwConf.Gateway.Close()
+	err = u.GwConf.grpcConn.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close gateway: %w", err)
 	}

@@ -12,7 +12,7 @@ func NewSigner(keyPath string) (identity.Sign, error) {
 		return nil, fmt.Errorf("failed to initialize a new signer: %w", err)
 	}
 
-	sk, err := identity.CertificateFromPEM(skPEM)
+	sk, err := identity.PrivateKeyFromPEM(skPEM)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize a new signer: %w", err)
 	}

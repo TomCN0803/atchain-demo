@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 const (
-	MSPID          = "DemoIdemixMSP"
+	MSPID          = "DemoMSP"
 	UserName       = "User1"
 	WalletPath     = "user/wallets/User1-client"
 	ServerName     = "peer0.demo.com"
@@ -27,9 +27,9 @@ func main() {
 		_ = user.CloseGateway()
 	}()
 
-	network := user.GwConf.Gateway.GetNetwork(NetWork)
+	network := user.Gateway.GetNetwork(NetWork)
 	contract := network.GetContract(Contract)
-	res, err := contract.SubmitTransaction("Echo", "324242342")
+	res, err := contract.EvaluateTransaction("echo", "324242342")
 	if err != nil {
 		fmt.Println(err)
 	}
