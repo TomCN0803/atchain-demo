@@ -6,10 +6,10 @@ networks:
 services:
   orderer.demo.com:
     container_name: orderer.demo.com
-    image: hyperledger/fabric-orderer:latest
+    image: hyperledger/fabric-orderer:2.4
     environment:
       - FABRIC_LOGGING_SPEC=INFO
-      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENADDRESS=orderer.demo.com
       - ORDERER_GENERAL_LISTENPORT=18860
       - ORDERER_GENERAL_GENESISMETHOD=file
       - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
@@ -37,7 +37,7 @@ services:
 
   peer0.demo.com:
     container_name: peer0.demo.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.4
     environment:
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=docker_atchain-demo
@@ -47,14 +47,18 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_ID=peer0.demo.com
       - CORE_PEER_ADDRESS=peer0.demo.com:18850
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:18850
+      - CORE_PEER_LISTENADDRESS=peer0.demo.com:18850
       - CORE_PEER_CHAINCODEADDRESS=peer0.demo.com:18870
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:18870
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer0.demo.com:18870
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.demo.com:18850 peer1.demo.com:18851 peer2.demo.com:18852
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.demo.com:18850
       - CORE_PEER_LOCALMSPID=DemoMSP
+      - CORE_PEER_GATEWAY_ENABLED=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_PEER_GOSSIP_ENDPOINT=peer0.demo.com:18850
     volumes:
       - /var/run/:/host/var/run/
       - ../../organization/peerOrganizations/demo.com/peers/peer0.demo.com/msp:/etc/hyperledger/fabric/msp
@@ -68,7 +72,7 @@ services:
 
   peer1.demo.com:
     container_name: peer1.demo.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.4
     environment:
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=docker_atchain-demo
@@ -78,14 +82,18 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_ID=peer1.demo.com
       - CORE_PEER_ADDRESS=peer1.demo.com:18851
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:18851
+      - CORE_PEER_LISTENADDRESS=peer1.demo.com:18851
       - CORE_PEER_CHAINCODEADDRESS=peer1.demo.com:18871
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:18871
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer1.demo.com:18871
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.demo.com:18850 peer1.demo.com:18851 peer2.demo.com:18852
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.demo.com:18851
       - CORE_PEER_LOCALMSPID=DemoMSP
+      - CORE_PEER_GATEWAY_ENABLED=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_PEER_GOSSIP_ENDPOINT=peer1.demo.com:18851
     volumes:
       - /var/run/:/host/var/run/
       - ../../organization/peerOrganizations/demo.com/peers/peer1.demo.com/msp:/etc/hyperledger/fabric/msp
@@ -99,7 +107,7 @@ services:
 
   peer2.demo.com:
     container_name: peer2.demo.com
-    image: hyperledger/fabric-peer:latest
+    image: hyperledger/fabric-peer:2.4
     environment:
       - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
       - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=docker_atchain-demo
@@ -109,14 +117,18 @@ services:
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
       - CORE_PEER_ID=peer2.demo.com
       - CORE_PEER_ADDRESS=peer2.demo.com:18852
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:18852
+      - CORE_PEER_LISTENADDRESS=peer2.demo.com:18852
       - CORE_PEER_CHAINCODEADDRESS=peer2.demo.com:18872
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:18872
+      - CORE_PEER_CHAINCODELISTENADDRESS=peer2.demo.com:18872
       - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.demo.com:18850 peer1.demo.com:18851 peer2.demo.com:18852
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.demo.com:18852
       - CORE_PEER_LOCALMSPID=DemoMSP
+      - CORE_PEER_GATEWAY_ENABLED=true
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_PEER_GOSSIP_ENDPOINT=peer2.demo.com:18852
     volumes:
       - /var/run/:/host/var/run/
       - ../../organization/peerOrganizations/demo.com/peers/peer2.demo.com/msp:/etc/hyperledger/fabric/msp
