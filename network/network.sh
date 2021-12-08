@@ -219,7 +219,9 @@ function deployCC() {
 
   approveForMyOrg "0"
   commitCCDef "0"
-  queryCommitted "0"
+  for ((i = 0; i < 3; i++)); do
+    queryCommitted "${i}"
+  done
 }
 
 function networkUp() {
