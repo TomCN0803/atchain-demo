@@ -1,14 +1,18 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strconv"
+	"time"
 
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
+	"github.com/TomCN0803/atchain-demo/app/pkg/transaction"
+	"github.com/TomCN0803/atchain-demo/pkg/idemix"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-gateway/pkg/client"
-	"github.com/hyperledger/fabric-gateway/pkg/idemix"
 	"github.com/hyperledger/fabric-gateway/pkg/identity"
 	"github.com/hyperledger/fabric-protos-go/msp"
 	"google.golang.org/grpc"
@@ -34,7 +38,7 @@ type User struct {
 
 type userGatewayConf struct {
 	grpcConn *grpc.ClientConn
-	GwSigner identity.Sign
+	gwSigner identity.Sign
 	identity identity.Identity
 }
 
@@ -58,23 +62,16 @@ func NewUser(mspID, name, walletPath string) (*User, error) {
 		return nil, fmt.Errorf("failed to create new user: %w", err)
 	}
 
-	user := new(User)
-	user.IdemixMSPSignerConfig = signerConf
-	user.MSPID = mspID
-	user.Name = name
-	user.WalletPath = walletPath
+	user := &User{
+		IdemixMSPSignerConfig: signerConf,
+		MSPID:                 mspID,
+		Name:                  name,
+		WalletPath:            walletPath,
+		IssuerPK:              issuerPKBytes,
+		RevocationPK:          revPKBytes,
+	}
 
 	user.CSP, err = idemix.NewIdemixCSP()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new user: %w", err)
-	}
-
-	user.IssuerPK, err = user.CSP.GetIssuerPK(issuerPKBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new user: %w", err)
-	}
-
-	user.IdxSK, err = user.CSP.GetUserSK(signerConf.Sk)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new user: %w", err)
 	}
@@ -102,14 +99,14 @@ func (u *User) InitGateway(serverName, serverEndpoint string) error {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	gwConf.Identity = id
+	gwConf.identity = id
 
 	signer, err := gateway.NewSigner(keyPath)
 	if err != nil {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	gwConf.GwSigner = signer
+	gwConf.gwSigner = signer
 	u.GwConf = gwConf
 
 	gw, err := gateway.NewGateway(id, signer, connection)
@@ -137,6 +134,45 @@ func (u *User) CloseGateway() error {
 }
 
 func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
+
+}
+
+func (u *User) prepareTransMeta(name string) (string, error) {
+	nymSK, err := u.CSP.DeriveNymSK(u.Sk, u.IssuerPK)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+	}
+
+	nymPK, err := u.CSP.GetNymPK(nymSK)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+	}
+
+	timestamp := time.Now().UnixNano()
+	txDigest := strconv.Itoa(int(timestamp)) + name + string(nymPK)
+	txDigestHash := sha256.Sum256([]byte(txDigest))
+
+	sig, err := u.CSP.Sign(u.Sk, nymSK, u.IssuerPK, u.Cred, u.CredentialRevocationInformation, txDigestHash[:])
+	if err != nil {
+		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+	}
+
+	nymSig, err := u.CSP.NymSign(u.Sk, nymSK, u.IssuerPK, txDigestHash[:])
+	if err != nil {
+		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+	}
+
+	meta := &transaction.Metadata{
+		Cttbe:        nil,
+		Sig:          sig,
+		NymSig:       nymSig,
+		Digest:       txDigestHash[:],
+		OU:           u.OrganizationalUnitIdentifier,
+		Role:         int(u.Role),
+		NymPK:        nymPK,
+		IssuerPK:     u.IssuerPK,
+		RevocationPK: u.RevocationPK,
+	}
 
 }
 
