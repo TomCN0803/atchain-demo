@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"path"
 
-	schemes "github.com/IBM/idemix/bccsp/schemes"
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-gateway/pkg/client"
@@ -23,24 +22,26 @@ type User struct {
 	MSPID      string
 	Name       string
 	WalletPath string
-	GwConf     *UserGatewayConf
-	Gateway    *client.Gateway
 
-	CSP      *idemix.CSPWrapper
-	IssuerPK schemes.Key
-	IdxSK    schemes.Key
-	IdxNymSK schemes.Key
+	GwConf  *userGatewayConf
+	Gateway *client.Gateway
+
+	CSP *idemix.CSPWrapper
+
+	IssuerPK     []byte
+	RevocationPK []byte
 }
 
-type UserGatewayConf struct {
+type userGatewayConf struct {
 	grpcConn *grpc.ClientConn
 	GwSigner identity.Sign
-	Identity identity.Identity
+	identity identity.Identity
 }
 
 func NewUser(mspID, name, walletPath string) (*User, error) {
 	confPath := path.Join(walletPath, "user", "SignerConfig")
 	ipkPath := path.Join(walletPath, "msp", "IssuerPublicKey")
+	revPKPath := path.Join(walletPath, "msp", "RevocationPublicKey")
 
 	signerConf, err := getIdemixSignerConf(confPath)
 	if err != nil {
@@ -48,6 +49,11 @@ func NewUser(mspID, name, walletPath string) (*User, error) {
 	}
 
 	issuerPKBytes, err := ioutil.ReadFile(ipkPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new user: %w", err)
+	}
+
+	revPKBytes, err := ioutil.ReadFile(revPKPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new user: %w", err)
 	}
@@ -87,7 +93,7 @@ func (u *User) InitGateway(serverName, serverEndpoint string) error {
 		return fmt.Errorf("failed to initialize gateway: %w", err)
 	}
 
-	gwConf := new(UserGatewayConf)
+	gwConf := new(userGatewayConf)
 
 	gwConf.grpcConn = connection
 
@@ -128,6 +134,10 @@ func (u *User) CloseGateway() error {
 	}
 
 	return nil
+}
+
+func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
+
 }
 
 func getIdemixSignerConf(confPath string) (*msp.IdemixMSPSignerConfig, error) {
