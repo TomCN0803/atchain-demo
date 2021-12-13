@@ -29,13 +29,13 @@ func NewIdemixCSP() (*CSPWrapper, error) {
 	return &CSPWrapper{csp: csp}, nil
 }
 
-func (c *CSPWrapper) Sign(userSK, userNymSK, issuerPK, credential, cri, digest []byte) ([]byte, error) {
+func (c *CSPWrapper) Sign(userSK, userNymSK, userNymPK, issuerPK, credential, cri, digest []byte) ([]byte, error) {
 	usk, err := c.importUserSK(userSK)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign the message: %w", err)
 	}
 
-	nymSK, err := c.importUserNymSK(userNymSK)
+	nymSK, err := c.importUserNymSK(userNymSK, userNymPK)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign the message: %w", err)
 	}
@@ -48,13 +48,13 @@ func (c *CSPWrapper) Sign(userSK, userNymSK, issuerPK, credential, cri, digest [
 	return c.sign(usk, nymSK, ipk, credential, cri, digest)
 }
 
-func (c *CSPWrapper) NymSign(userSK, userNymSK, issuerPK, digest []byte) ([]byte, error) {
+func (c *CSPWrapper) NymSign(userSK, userNymSK, userNymPK, issuerPK, digest []byte) ([]byte, error) {
 	usk, err := c.importUserSK(userSK)
 	if err != nil {
 		return nil, fmt.Errorf("failed to anonymously sign the message: %w", err)
 	}
 
-	nymSK, err := c.importUserNymSK(userNymSK)
+	nymSK, err := c.importUserNymSK(userNymSK, userNymPK)
 	if err != nil {
 		return nil, fmt.Errorf("failed to anonymously sign the message: %w", err)
 	}
@@ -67,47 +67,38 @@ func (c *CSPWrapper) NymSign(userSK, userNymSK, issuerPK, digest []byte) ([]byte
 	return c.nymSign(usk, nymSK, ipk, digest)
 }
 
-func (c *CSPWrapper) DeriveNymSK(userSK, issuerPK []byte) ([]byte, error) {
+func (c *CSPWrapper) DeriveNymKeyPair(userSK, issuerPK []byte) ([]byte, []byte, error) {
 	usk, err := c.importUserSK(userSK)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
 	}
 
 	ipk, err := c.importIssuerPK(issuerPK)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
 	}
 
 	nymSK, err := c.derivNymSK(usk, ipk)
 	if err != nil {
-		return nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
-	}
-
-	nymSKBytes, err := nymSK.Bytes()
-	if err != nil {
-		return nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
-	}
-
-	return nymSKBytes, nil
-}
-
-func (c *CSPWrapper) GetNymPK(userNymSK []byte) ([]byte, error) {
-	nymSK, err := c.importUserNymSK(userNymSK)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anonymous public key: %w", err)
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
 	}
 
 	nymPK, err := nymSK.PublicKey()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anonymous public key: %w", err)
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
+	}
+
+	nymSKBytes, err := nymSK.Bytes()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
 	}
 
 	nymPKBytes, err := nymPK.Bytes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anonymous public key: %w", err)
+		return nil, nil, fmt.Errorf("failed to derive anonymous secret key: %w", err)
 	}
 
-	return nymPKBytes, err
+	return nymSKBytes, nymPKBytes, nil
 }
 
 func (c *CSPWrapper) VerifySig(ou string, role int, issuerPK, revocationPK, signature, digest []byte) (bool, error) {
@@ -209,8 +200,8 @@ func (c *CSPWrapper) importUserSK(userSKBytes []byte) (schemes.Key, error) {
 	return userSK, nil
 }
 
-func (c *CSPWrapper) importUserNymSK(userNymSK []byte) (schemes.Key, error) {
-	nymSK, err := c.csp.KeyImport(userNymSK, &schemes.IdemixNymKeyImportOpts{Temporary: true})
+func (c *CSPWrapper) importUserNymSK(userNymSK, userNymPK []byte) (schemes.Key, error) {
+	nymSK, err := c.csp.KeyImport(append(userNymSK, userNymPK...), &schemes.IdemixNymKeyImportOpts{Temporary: true})
 	if err != nil {
 		return nil, fmt.Errorf("failed to import user anonymous secret key: %w", err)
 	}

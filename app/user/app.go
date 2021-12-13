@@ -29,7 +29,7 @@ func main() {
 
 	network := user.Gateway.GetNetwork(NetWork)
 	contract := network.GetContract(Contract)
-	res, err := contract.EvaluateTransaction("echo", "324242342")
+	res, err :=user.EvaluateTransaction(contract, "Echo", "adasdasfasdfadasd")
 	if err != nil {
 		fmt.Println(err)
 	}
