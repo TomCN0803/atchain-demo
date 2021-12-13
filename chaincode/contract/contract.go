@@ -2,6 +2,9 @@ package contract
 
 import (
 	"fmt"
+
+	"github.com/TomCN0803/atchain-demo/pkg/idemix"
+	"github.com/TomCN0803/atchain-demo/pkg/transaction"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
@@ -10,25 +13,50 @@ type SmartContract struct {
 }
 
 // Echo the argument back as the response
-func (s *SmartContract) Echo(ctx contractapi.TransactionContextInterface, arg string) (string, error) {
-	return arg, nil
-}
-
-// Put a value for a given ledger key and return the value
-func (s *SmartContract) Put(ctx contractapi.TransactionContextInterface, key string, value string) (string, error) {
-	if err := ctx.GetStub().PutState(key, []byte(value)); err != nil {
-		return "", fmt.Errorf("failed to put state to ledger: %w", err)
+func (s *SmartContract) Echo(meta, arg string) (string, error) {
+	res, err := s.checkMetadata(meta)
+	if err != nil || !res {
+		return "", fmt.Errorf("unauthorized transaction, meta check result: %v, error msg: %w", res, err)
 	}
 
-	return value, nil
+	return fmt.Sprintf("meta check result: %v ", res) + arg, nil
 }
 
-// Get the value for a given ledger key
-func (s *SmartContract) Get(ctx contractapi.TransactionContextInterface, key string) (string, error) {
-	value, err := ctx.GetStub().GetState(key)
+func (s *SmartContract) checkMetadata(meta string) (bool, error) {
+	metaBytes := []byte(meta)
+
+	metadata := new(transaction.Metadata)
+	err := metadata.Deserialize(metaBytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to get state from ledger: %w", err)
+		return false, fmt.Errorf("failed to check transaction metadata: %w", err)
 	}
 
-	return string(value), nil
+	csp, err := idemix.NewIdemixCSP()
+	if err != nil {
+		return false, fmt.Errorf("failed to check transaction metadata: %w", err)
+	}
+
+	r1, err := csp.VerifyNymSig(
+		metadata.NymPK,
+		metadata.IssuerPK,
+		metadata.NymSig,
+		metadata.Digest,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to check transaction metadata: %w", err)
+	}
+
+	r2, err := csp.VerifySig(
+		metadata.OU,
+		metadata.Role,
+		metadata.IssuerPK,
+		metadata.RevocationPK,
+		metadata.Sig,
+		metadata.Digest,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to check transaction metadata: %w", err)
+	}
+
+	return r1 && r2, nil
 }

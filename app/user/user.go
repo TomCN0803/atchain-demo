@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
-	"github.com/TomCN0803/atchain-demo/app/pkg/transaction"
 	"github.com/TomCN0803/atchain-demo/pkg/idemix"
+	"github.com/TomCN0803/atchain-demo/pkg/transaction"
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-gateway/pkg/client"
 	"github.com/hyperledger/fabric-gateway/pkg/identity"
@@ -134,18 +134,62 @@ func (u *User) CloseGateway() error {
 }
 
 func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
+	err := u.prepareTransMeta(name, args)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to evaluate transaction %s.%s: %w",
+			contract.ChaincodeName(),
+			name,
+			err,
+		)
+	}
 
+	res, err := contract.EvaluateTransaction(name, args...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to evaluate transaction %s.%s: %w",
+			contract.ChaincodeName(),
+			name,
+			err,
+		)
+	}
+
+	return res, nil
 }
 
-func (u *User) prepareTransMeta(name string) (string, error) {
+func (u *User) SubmitTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
+	err := u.prepareTransMeta(name, args)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to submit transaction %s.%s: %w",
+			contract.ChaincodeName(),
+			name,
+			err,
+		)
+	}
+
+	res, err := contract.SubmitTransaction(name, args...)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to submit transaction %s.%s: %w",
+			contract.ChaincodeName(),
+			name,
+			err,
+		)
+	}
+
+	return res, nil
+}
+
+func (u *User) prepareTransMeta(name string, args []string) error {
 	nymSK, err := u.CSP.DeriveNymSK(u.Sk, u.IssuerPK)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
 	nymPK, err := u.CSP.GetNymPK(nymSK)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
 	timestamp := time.Now().UnixNano()
@@ -154,12 +198,12 @@ func (u *User) prepareTransMeta(name string) (string, error) {
 
 	sig, err := u.CSP.Sign(u.Sk, nymSK, u.IssuerPK, u.Cred, u.CredentialRevocationInformation, txDigestHash[:])
 	if err != nil {
-		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
 	nymSig, err := u.CSP.NymSign(u.Sk, nymSK, u.IssuerPK, txDigestHash[:])
 	if err != nil {
-		return "", fmt.Errorf("failed to generate transaction metadata: %w", err)
+		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
 	meta := &transaction.Metadata{
@@ -174,6 +218,16 @@ func (u *User) prepareTransMeta(name string) (string, error) {
 		RevocationPK: u.RevocationPK,
 	}
 
+	metaBytes, err := meta.Serialize()
+	if err != nil {
+		return fmt.Errorf("failed to generate transaction metadata: %w", err)
+	}
+
+	args = append(args, "")
+	copy(args[1:], args)
+	args[0] = string(metaBytes)
+
+	return nil
 }
 
 func getIdemixSignerConf(confPath string) (*msp.IdemixMSPSignerConfig, error) {

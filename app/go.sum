@@ -26,6 +26,8 @@ github.com/Shopify/sarama v1.30.0/go.mod h1:zujlQQx1kzHsh4jfV1USnptCQrHAEZ2Hk8fT
 github.com/Shopify/toxiproxy/v2 v2.1.6-0.20210914104332-15ea381dcdae/go.mod h1:/cvHQkZ1fst0EmZnA5dFtiQdWCNCFYzb+uE2vqVgvx0=
 github.com/TomCN0803/atchain-demo v0.0.0-20211212110242-467a88bb371d h1:NSYjRPd7UZFz64qzr0HKF+K5Cu//pGqyyn7AR6j6QVE=
 github.com/TomCN0803/atchain-demo v0.0.0-20211212110242-467a88bb371d/go.mod h1:s/o/GgiPASS/rJml42yL3v5KicBJ8t0i3cF5fJNtwho=
+github.com/TomCN0803/atchain-demo v0.0.0-20211212144100-4806aa7ca1ff h1:2L2wvaz/+lqAJNlDAnHUjcSddZApOnXNlzoTkmE2TxU=
+github.com/TomCN0803/atchain-demo v0.0.0-20211212144100-4806aa7ca1ff/go.mod h1:s/o/GgiPASS/rJml42yL3v5KicBJ8t0i3cF5fJNtwho=
 github.com/TomCN0803/fabric-gateway v1.0.2 h1:P/Pd4+znmQc/AUY0PT7LwATlGm/DluC4LSykDStChkQ=
 github.com/TomCN0803/fabric-gateway v1.0.2/go.mod h1:ysGmyDCue9JSoyPaN52vKDXrNqY2U7hgNFyp+y/tfAs=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

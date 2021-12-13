@@ -3,7 +3,7 @@ module github.com/TomCN0803/atchain-demo/app
 go 1.17
 
 require (
-	github.com/TomCN0803/atchain-demo v0.0.0-20211212110242-467a88bb371d
+	github.com/TomCN0803/atchain-demo v0.0.0-20211212144100-4806aa7ca1ff
 	github.com/golang/protobuf v1.5.2
 	github.com/hyperledger/fabric-gateway v1.5.2
 	github.com/hyperledger/fabric-protos-go v0.0.0-20211118165945-23d738fc3553
