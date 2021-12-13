@@ -11,7 +11,7 @@ services:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw
     ports:
-      - "18950:5984"
+      - "5984:5984"
     networks:
       - atchain-demo
   peer0.demo.com:
@@ -30,7 +30,7 @@ services:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw
     ports:
-      - "18951:5984"
+      - "6984:5984"
     networks:
       - atchain-demo
   peer1.demo.com:
@@ -49,7 +49,7 @@ services:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw
     ports:
-      - "18952:5984"
+      - "7984:5984"
     networks:
       - atchain-demo
   peer2.demo.com:

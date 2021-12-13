@@ -134,7 +134,7 @@ func (u *User) CloseGateway() error {
 }
 
 func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
-	err := u.prepareTransMeta(name, args)
+	err := u.prepareTransMeta(name, &args)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to evaluate transaction %s.%s: %w",
@@ -158,7 +158,7 @@ func (u *User) EvaluateTransaction(contract *client.Contract, name string, args 
 }
 
 func (u *User) SubmitTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
-	err := u.prepareTransMeta(name, args)
+	err := u.prepareTransMeta(name, &args)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to submit transaction %s.%s: %w",
@@ -181,13 +181,8 @@ func (u *User) SubmitTransaction(contract *client.Contract, name string, args ..
 	return res, nil
 }
 
-func (u *User) prepareTransMeta(name string, args []string) error {
-	nymSK, err := u.CSP.DeriveNymSK(u.Sk, u.IssuerPK)
-	if err != nil {
-		return fmt.Errorf("failed to generate transaction metadata: %w", err)
-	}
-
-	nymPK, err := u.CSP.GetNymPK(nymSK)
+func (u *User) prepareTransMeta(name string, argsPtr *[]string) error {
+	nymSK, nymPK, err := u.CSP.DeriveNymKeyPair(u.Sk, u.IssuerPK)
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
@@ -196,12 +191,12 @@ func (u *User) prepareTransMeta(name string, args []string) error {
 	txDigest := strconv.Itoa(int(timestamp)) + name + string(nymPK)
 	txDigestHash := sha256.Sum256([]byte(txDigest))
 
-	sig, err := u.CSP.Sign(u.Sk, nymSK, u.IssuerPK, u.Cred, u.CredentialRevocationInformation, txDigestHash[:])
+	sig, err := u.CSP.Sign(u.Sk, nymSK, nymPK, u.IssuerPK, u.Cred, u.CredentialRevocationInformation, txDigestHash[:])
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
-	nymSig, err := u.CSP.NymSign(u.Sk, nymSK, u.IssuerPK, txDigestHash[:])
+	nymSig, err := u.CSP.NymSign(u.Sk, nymSK, nymPK, u.IssuerPK, txDigestHash[:])
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
@@ -223,9 +218,9 @@ func (u *User) prepareTransMeta(name string, args []string) error {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
 
-	args = append(args, "")
-	copy(args[1:], args)
-	args[0] = string(metaBytes)
+	*argsPtr = append(*argsPtr, "")
+	copy((*argsPtr)[1:], *argsPtr)
+	(*argsPtr)[0] = string(metaBytes)
 
 	return nil
 }
