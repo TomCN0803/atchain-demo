@@ -17,6 +17,7 @@ require (
 	github.com/hyperledger/fabric v2.1.1+incompatible // indirect
 	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8 // indirect
 	github.com/miekg/pkcs11 v1.0.3 // indirect
+	github.com/olegfomenko/paillier v0.0.0-20210208122127-0d967e11daea // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect

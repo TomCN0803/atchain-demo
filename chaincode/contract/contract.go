@@ -2,6 +2,7 @@ package contract
 
 import (
 	"fmt"
+	"errors"
 
 	"github.com/TomCN0803/atchain-demo/pkg/idemix"
 	"github.com/TomCN0803/atchain-demo/pkg/transaction"
@@ -13,13 +14,13 @@ type SmartContract struct {
 }
 
 // Echo the argument back as the response
-func (s *SmartContract) Echo(meta, arg string) (string, error) {
+func (s *SmartContract) Echo(meta, arg string)  error {
 	res, err := s.checkMetadata(meta)
 	if err != nil || !res {
-		return "", fmt.Errorf("unauthorized transaction, meta check result: %v, error msg: %w", res, err)
+		return  fmt.Errorf("unauthorized transaction, meta check result: %v, error msg: %w", res, err)
 	}
-
-	return fmt.Sprintf("meta check result: %v ", res) + arg, nil
+    
+	return nil
 }
 
 func (s *SmartContract) checkMetadata(meta string) (bool, error) {
@@ -60,3 +61,35 @@ func (s *SmartContract) checkMetadata(meta string) (bool, error) {
 
 	return r1 && r2, nil
 }
+
+func (s *SmartContract) Get(ctx contractapi.TransactionContextInterface, key string) (string,error) {
+    fmt.Println(key)
+	existing, err := ctx.GetStub().GetState(key)
+	if err != nil {
+		return "", errors.New("Unable to interact with world state")
+	}
+	if existing == nil {
+		return "", fmt.Errorf("Cannot read world state pair with key %s. Does not exist", key)
+	}
+	fmt.Println(string(existing))
+	return string(existing), nil
+
+}
+
+func (s *SmartContract) Insert(ctx contractapi.TransactionContextInterface, meta, key string, value string) error {
+	res, err := s.checkMetadata(meta)
+
+	fmt.Println(key)
+	fmt.Println(value)
+
+	if err != nil || !res {
+		return  fmt.Errorf("unauthorized transaction, meta check result: %v, error msg: %w", res, err)
+	}
+
+	err = ctx.GetStub().PutState(key, []byte(value))
+	if err != nil {
+		return errors.New("Unable to interact with world state")
+	}
+	return nil
+}
+

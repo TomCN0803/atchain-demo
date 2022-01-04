@@ -5,10 +5,12 @@ import (
 
 	cc "github.com/TomCN0803/atchain-demo/chaincode/contract"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"fmt"
 )
 
 func main() {
 	contract, err := contractapi.NewChaincode(new(cc.SmartContract))
+	fmt.Println("12\n")
 	if err != nil {
 		log.Panicf("Error creating chaincode: %v", err)
 	}

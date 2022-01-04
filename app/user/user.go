@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
 	"github.com/TomCN0803/atchain-demo/pkg/idemix"
 	"github.com/TomCN0803/atchain-demo/pkg/transaction"
@@ -157,28 +158,32 @@ func (u *User) EvaluateTransaction(contract *client.Contract, name string, args 
 	return res, nil
 }
 
-func (u *User) SubmitTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
+func (u *User) SubmitTransaction(contract *client.Contract, name string, args ...string) error {
 	err := u.prepareTransMeta(name, &args)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return  fmt.Errorf(
 			"failed to submit transaction %s.%s: %w",
 			contract.ChaincodeName(),
 			name,
 			err,
 		)
 	}
+	
 
-	res, err := contract.SubmitTransaction(name, args...)
-	if err != nil {
-		return nil, fmt.Errorf(
+	r, err1 := contract.SubmitTransaction(name, args...)
+	if err1 != nil {
+		return fmt.Errorf(
 			"failed to submit transaction %s.%s: %w",
 			contract.ChaincodeName(),
 			name,
-			err,
+			err1,
 		)
 	}
+	if r != nil{
+		fmt.Println(r)
+	}
 
-	return res, nil
+	return  nil
 }
 
 func (u *User) prepareTransMeta(name string, argsPtr *[]string) error {
@@ -238,4 +243,17 @@ func getIdemixSignerConf(confPath string) (*msp.IdemixMSPSignerConfig, error) {
 	}
 
 	return signerConf, nil
+}
+
+func (u *User) GetTransaction(contract *client.Contract, name string, args ...string) string {
+
+	
+
+	res, err := contract.EvaluateTransaction(name, args[0])
+	if err != nil {
+		fmt.Println(err)
+		return  "-1"
+	}
+    //fmt.Println(string(res))
+	return string(res)
 }
