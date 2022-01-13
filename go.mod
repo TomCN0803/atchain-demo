@@ -13,6 +13,7 @@ require (
 	github.com/consensys/gnark-crypto v0.5.3 // indirect
 	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/renzhe666/bn256 v0.0.0-20220110103337-376457363b45 // indirect
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect

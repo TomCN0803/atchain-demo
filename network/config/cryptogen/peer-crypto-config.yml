@@ -8,4 +8,4 @@ PeerOrgs:
         - localhost
         - "127.0.0.1"
     Users:
-      Count: 3
+      Count: 10

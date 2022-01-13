@@ -4,7 +4,9 @@ go 1.17
 
 require (
 	github.com/TomCN0803/atchain-demo v0.0.0-20211213153615-e783d6a728ea
+	github.com/TomCN0803/paillier-go v0.0.0-20220105051919-b8d9141e7a56
 	github.com/hyperledger/fabric-contract-api-go v1.1.1
+	github.com/renzhe666/bn256 v0.0.0-20220110103337-376457363b45
 )
 
 require (
@@ -21,11 +23,14 @@ require (
 	github.com/gobuffalo/packd v0.3.0 // indirect
 	github.com/gobuffalo/packr v1.30.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/hyperledger/fabric v2.1.1+incompatible // indirect
 	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8 // indirect
 	github.com/hyperledger/fabric-chaincode-go v0.0.0-20210718160520-38d29fabecb9 // indirect
+	github.com/hyperledger/fabric-gateway v1.0.0 // indirect
 	github.com/hyperledger/fabric-protos-go v0.0.0-20211118165945-23d738fc3553 // indirect
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
+	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
@@ -42,5 +47,5 @@ require (
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

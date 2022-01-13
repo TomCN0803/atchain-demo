@@ -13,11 +13,16 @@ require (
 require (
 	github.com/IBM/idemix v0.0.0-20211105080215-fc2a3b9789c3 // indirect
 	github.com/IBM/mathlib v0.0.0-20210928081244-f5486459a290 // indirect
+	github.com/TomCN0803/paillier-go v0.0.0-20220105051919-b8d9141e7a56 // indirect
 	github.com/consensys/gnark-crypto v0.5.3 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/hyperledger/fabric v2.1.1+incompatible // indirect
 	github.com/hyperledger/fabric-amcl v0.0.0-20210603140002-2670f91851c8 // indirect
+	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/miekg/pkcs11 v1.0.3 // indirect
+	github.com/olegfomenko/paillier v0.0.0-20210208122127-0d967e11daea // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/renzhe666/bn256 v0.0.0-20220110103337-376457363b45 // indirect
 	github.com/sykesm/zap-logfmt v0.0.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
