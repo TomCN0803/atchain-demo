@@ -2,11 +2,16 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	paillier "github.com/TomCN0803/paillier-go"
 	"io/ioutil"
 	"path"
 	"strconv"
 	"time"
+	"os/exec"
+	"bytes"
+
 
 	"github.com/TomCN0803/atchain-demo/app/pkg/gateway"
 	"github.com/TomCN0803/atchain-demo/pkg/idemix"
@@ -40,6 +45,47 @@ type userGatewayConf struct {
 	grpcConn *grpc.ClientConn
 	gwSigner identity.Sign
 	identity identity.Identity
+}
+
+
+func Start(id string)  {
+	dir := "./userKeyGen.sh client "+id+" 12344"
+	command := exec.Command("sh","-c",dir)
+	outinfo := bytes.Buffer{}
+	command.Stdout = &outinfo
+	command.Dir = "user"
+	err := command.Start()
+	if err != nil{
+		fmt.Println(err.Error())
+	}
+	if err = command.Wait();err!=nil{
+		fmt.Println(err.Error())
+	}else{
+		fmt.Println(command.ProcessState.Pid())
+		fmt.Println(outinfo.String())
+	}
+
+}
+
+func New(id string) (*User,*client.Contract) {//555
+
+	UserNames := id
+	WalletPaths :="user/wallets/"+id+"-client"
+	fmt.Println(WalletPaths)
+
+	user, err2 := NewUser(MSPID, UserNames, WalletPaths)
+	if err2 != nil {
+		panic(err2)
+	}
+
+	err := user.InitGateway(ServerName, ServerEndpoint)
+	if err != nil {
+		panic(err)
+	}
+
+	network := user.Gateway.GetNetwork(NetWork)
+	contract := network.GetContract(Contract)
+	return user,contract
 }
 
 func NewUser(mspID, name, walletPath string) (*User, error) {
@@ -133,17 +179,8 @@ func (u *User) CloseGateway() error {
 	return nil
 }
 
-func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
-	err := u.prepareTransMeta(name, &args)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"failed to evaluate transaction %s.%s: %w",
-			contract.ChaincodeName(),
-			name,
-			err,
-		)
-	}
-
+func (u *User) EvaluateTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {//1111
+	
 	res, err := contract.EvaluateTransaction(name, args...)
 	if err != nil {
 		return nil, fmt.Errorf(
@@ -157,31 +194,36 @@ func (u *User) EvaluateTransaction(contract *client.Contract, name string, args 
 	return res, nil
 }
 
-func (u *User) SubmitTransaction(contract *client.Contract, name string, args ...string) ([]byte, error) {
-	err := u.prepareTransMeta(name, &args)
+func (u *User) SubmitTransaction(contract *client.Contract, name string, ID string,args ...string) error {///111
+
+	err := u.prepareTransMeta(name,ID,&args)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return  fmt.Errorf(
 			"failed to submit transaction %s.%s: %w",
 			contract.ChaincodeName(),
 			name,
 			err,
 		)
 	}
+	
 
-	res, err := contract.SubmitTransaction(name, args...)
-	if err != nil {
-		return nil, fmt.Errorf(
+	r, err1 := contract.SubmitTransaction(name, args...)
+	if err1 != nil {
+		return fmt.Errorf(
 			"failed to submit transaction %s.%s: %w",
 			contract.ChaincodeName(),
 			name,
-			err,
+			err1,
 		)
 	}
+	if r != nil{
+		fmt.Println(r)
+	}
 
-	return res, nil
+	return  nil
 }
 
-func (u *User) prepareTransMeta(name string, argsPtr *[]string) error {
+func (u *User) prepareTransMeta(name string, ID string,argsPtr *[]string) error {//1111
 	nymSK, nymPK, err := u.CSP.DeriveNymKeyPair(u.Sk, u.IssuerPK)
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
@@ -200,9 +242,10 @@ func (u *User) prepareTransMeta(name string, argsPtr *[]string) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate transaction metadata: %w", err)
 	}
+	cctbe := Temencrypt(ID,nymPK)
 
 	meta := &transaction.Metadata{
-		Cttbe:        nil,
+		Cttbe:        cctbe,
 		Sig:          sig,
 		NymSig:       nymSig,
 		Digest:       txDigestHash[:],
@@ -238,4 +281,70 @@ func getIdemixSignerConf(confPath string) (*msp.IdemixMSPSignerConfig, error) {
 	}
 
 	return signerConf, nil
+}
+
+func (u *User) GetTransaction(contract *client.Contract, name string, args ...string) string {
+
+	
+
+	res, err := contract.EvaluateTransaction(name, args[0])
+	if err != nil {
+		fmt.Println(err)
+		return  "-1"
+	}
+    //fmt.Println(string(res))
+	return string(res)
+}
+func (u *User) ComputContract(contract *client.Contract, name string,publicKey *paillier.PublicKey,privateKey *paillier.PrivateKey,operation string,lable string,key string,n string,p string) string {
+
+	jsonBytes, err2 := json.Marshal(publicKey)
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+	fmt.Println(string(jsonBytes))
+
+	if operation =="mul"{
+		res, err1 := contract.EvaluateTransaction(name, string(jsonBytes), lable, key, n)
+		if err1 != nil {
+			fmt.Println(err1)
+			return "-1"
+		}
+		n1, err := strconv.Atoi(key)
+		if err!=nil{
+			fmt.Println(err)
+		}
+		newStr:=fmt.Sprintf("%03d", n1)
+		lable_1 := lable + newStr
+		Insertdata(string(res),lable_1,privateKey)
+		return string(res)
+	}else if operation == "sub"{
+		res, err1 := contract.EvaluateTransaction(name, string(jsonBytes), operation, lable, key, n, p)
+		if err1 != nil {
+			fmt.Println(err1)
+			return "-1"
+		}
+		n1, err := strconv.Atoi(key)
+		if err!=nil{
+			fmt.Println(err)
+		}
+		newStr:=fmt.Sprintf("%03d", n1)
+		lable_1 := lable + newStr
+		Insertdata(string(res),lable_1,privateKey)
+		return string(res)
+	}else {
+		res, err1 := contract.EvaluateTransaction(name, string(jsonBytes), operation, lable, key, n, p)
+		if err1 != nil {
+			fmt.Println(err1)
+			return "-1"
+		}
+		n1, err := strconv.Atoi(key)
+		if err!=nil{
+			fmt.Println(err)
+		}
+		newStr:=fmt.Sprintf("%03d", n1)
+		lable_1 := lable + newStr
+		Insertdata(string(res),lable_1,privateKey)
+		return string(res)
+
+	}
 }
